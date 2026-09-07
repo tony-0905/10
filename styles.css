@@ -504,6 +504,18 @@ main, .nav, .footer, .to-top { position: relative; z-index: 2; }
 .reveal { opacity: 0; transform: translateY(34px); transition: opacity .9s var(--ease), transform .9s var(--ease); transition-delay: calc(var(--d, 0) * 110ms); }
 .reveal.in { opacity: 1; transform: none; }
 
+/* 荣誉区下方一行总结 */
+.award-note {
+  margin-top: 34px;
+  text-align: center;
+  font-size: 16px;
+  letter-spacing: .02em;
+  color: var(--ink-2);
+}
+.award-note b { font-weight: 800; color: #0f3e5e; }
+.note-star { color: #f59e0b; }
+@media (max-width: 640px) { .award-note { font-size: 14px; } }
+
 /* ── 6. 关于我们 ──────────────────────────────────────────────── */
 .about-grid {
   display: grid;
@@ -589,6 +601,12 @@ main, .nav, .footer, .to-top { position: relative; z-index: 2; }
 
 .dir-card.big { grid-column: span 3; min-height: 300px; }
 .dir-card:not(.big) { grid-column: span 3; }
+
+/* 卡片视觉顺序：嵌入式（本源）→ 前端 → 后端 → 深度学习 */
+.dir-grid .dir-card:nth-child(3) { order: 1; }
+.dir-grid .dir-card:nth-child(1) { order: 2; }
+.dir-grid .dir-card:nth-child(2) { order: 3; }
+.dir-grid .dir-card:nth-child(4) { order: 4; }
 
 /* 顶部渐变发丝线 */
 .dir-card::before {
