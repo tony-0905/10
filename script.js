@@ -237,4 +237,26 @@
     });
   }
 
+  /* ── 9. 荣誉奖项：对角线双奖轮播 ─────────────
+     · 4 卡网格，主对角线(①④)先依次切换，再次对角线(②③)依次切换，循环
+     · 切换柔和，同一对角线上两张卡先后错开
+  ─────────────────────────────────────────────── */
+  const awardStacks = $$(".award-stack");
+  if (awardStacks.length === 4) {
+    const diagonals = [[0, 3], [1, 2]];   /* 主对角线 / 次对角线 */
+    const toggle = idx => {
+      const items = $$(".award-item", awardStacks[idx]);
+      if (items.length < 2) return;
+      items.forEach(it => it.classList.toggle("alt"));
+    };
+    let diag = 0;
+    const run = () => {
+      toggle(diagonals[diag][0]);                 /* 第一个先换 */
+      setTimeout(() => toggle(diagonals[diag][1]), 1300);  /* 另一个再换 */
+      diag = (diag + 1) % diagonals.length;
+    };
+    run();                                        /* 开播：主对角线 */
+    setInterval(run, 5200);
+  }
+
 })();

@@ -693,6 +693,11 @@ main, .nav, .footer, .to-top { position: relative; z-index: 2; }
   box-shadow: 0 34px 72px -18px rgba(23, 40, 99, .3), inset 0 1px 0 rgba(255, 255, 255, 1);
 }
 
+/* 每卡双奖项轮播 */
+.award-stack { position: relative; min-height: 262px; }
+.award-item { transition: opacity .8s var(--ease); }
+.award-item.alt { position: absolute; inset: 0; opacity: 0; pointer-events: none; }
+
 .award-top {
   display: flex; justify-content: space-between; align-items: center;
   gap: 10px;
