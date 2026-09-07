@@ -102,7 +102,7 @@
      · 点击左/右箭头或卡片：立即切换，暂停自动 15 秒
   ──────────────────────────────────────────────────────────────── */
   const PHOTOS = Array.from({ length: 9 }, (_, i) =>
-    `images/photos/photo-${String(i + 1).padStart(2, "0")}.jpg`);
+    `images/photos/photo-${String(i + 1).padStart(2, "0")}.webp`);
 
   const AUTO_INTERVAL = 5000;     /* 自动轮播间隔 */
   const HOLD_AFTER_CLICK = 15000; /* 点击后暂停时长 */
@@ -116,42 +116,57 @@
 
     const pad = i => String(i + 1).padStart(2, "0");
 
-    function show(idx, dir) {
-      const oldImg = $(".flip-img", card);
-      if (oldImg && card.dataset.busy) return;
+    async function show(idx, dir) {
+      if (card.dataset.busy) return;
       card.dataset.busy = "1";
-
-      pos = (idx + PHOTOS.length) % PHOTOS.length;
-      const nextSrc = PHOTOS[pos];
-
-      /* 新图从右（或左）侧滑入 */
+      const oldImg = $(".flip-img", card);
+      const nextPos = (idx + PHOTOS.length) % PHOTOS.length;
       const newImg = document.createElement("img");
       newImg.className = "flip-img " + (dir === -1 ? "is-in-rev" : "is-in");
-      newImg.src = nextSrc;
-      newImg.alt = `团队照片 ${pad(pos)}`;
-      viewport.appendChild(newImg);
-
-      /* 下一帧：新图滑入 + 旧图滑走 */
-      requestAnimationFrame(() => requestAnimationFrame(() => {
-        newImg.classList.remove("is-in", "is-in-rev");
-        if (oldImg) {
-          oldImg.classList.add(dir === -1 ? "is-out-rev" : "is-out");
-        }
-        setTimeout(() => {
-          if (oldImg) oldImg.remove();
-          delete card.dataset.busy;
-        }, 700);
-      }));
-
-      if (cap) cap.textContent = `团队合影 · ${pad(pos)}`;
+      newImg.alt = `团队照片 ${pad(nextPos)}`;
+      let loadTimeout;
+      try {
+        newImg.src = PHOTOS[nextPos];
+        await Promise.race([
+          newImg.decode(),
+          new Promise((_, reject) => {
+            loadTimeout = setTimeout(() => reject(new Error("Image load timeout")), 15000);
+          })
+        ]);
+        clearTimeout(loadTimeout);
+        viewport.appendChild(newImg);
+        pos = nextPos;
+        if (cap) cap.textContent = `团队合影 · ${pad(pos)}`;
+        await new Promise(resolve => {
+          requestAnimationFrame(() => requestAnimationFrame(() => {
+            newImg.classList.remove("is-in", "is-in-rev");
+            if (oldImg) oldImg.classList.add(dir === -1 ? "is-out-rev" : "is-out");
+            setTimeout(resolve, 700);
+          }));
+        });
+        if (oldImg) oldImg.remove();
+      } catch {
+        // 加载失败时保留原图和图注，允许下次重试。
+        newImg.remove();
+      } finally {
+        clearTimeout(loadTimeout);
+        delete card.dataset.busy;
+      }
     }
 
     function scheduleAuto(delay = AUTO_INTERVAL) {
       clearTimeout(timer);
-      timer = setTimeout(() => {
-        show(pos + 1, 1);
+      timer = setTimeout(async () => {
+        await show(pos + 1, 1);
         scheduleAuto();
       }, delay);
+    }
+
+    async function manualShow(dir) {
+      if (card.dataset.busy) return;
+      clearTimeout(timer);
+      await show(pos + dir, dir);
+      scheduleAuto(HOLD_AFTER_CLICK);
     }
 
     /* 左右箭头：上一张 / 下一张；点卡片本体 → 下一张 */
@@ -159,22 +174,51 @@
     const next = $(".flip-next", card);
     if (prev) prev.addEventListener("click", e => {
       e.stopPropagation();
-      show(pos - 1, -1);
-      scheduleAuto(HOLD_AFTER_CLICK);
+      manualShow(-1);
     });
     if (next) next.addEventListener("click", e => {
       e.stopPropagation();
-      show(pos + 1, 1);
-      scheduleAuto(HOLD_AFTER_CLICK);
+      manualShow(1);
     });
     card.addEventListener("click", e => {
       if (e.target.closest(".flip-arrow")) return;
-      show(pos + 1, 1);
-      scheduleAuto(HOLD_AFTER_CLICK);
+      manualShow(1);
     });
 
     scheduleAuto();
   }
+
+  /* 纳新群号与二维码复制 */
+  const copyStatus = $("#copyStatus");
+  let statusTimer;
+  function announceCopy(message) {
+    clearTimeout(statusTimer);
+    copyStatus.textContent = message;
+    statusTimer = setTimeout(() => { copyStatus.textContent = ""; }, 6000);
+  }
+
+  $("#copyGroup").addEventListener("click", async e => {
+    const button = e.currentTarget;
+    button.disabled = true;
+    try {
+      await navigator.clipboard.writeText($("#groupNumber").textContent.trim());
+      announceCopy("群号已复制");
+    } catch {
+      announceCopy("复制失败，请长按群号手动复制");
+    } finally {
+      button.disabled = false;
+    }
+  });
+
+  const qrDialog = $("#qrDialog");
+  $("#openQr").addEventListener("click", () => qrDialog.showModal());
+  $("#closeQr").addEventListener("click", () => qrDialog.close());
+  qrDialog.addEventListener("click", e => {
+    if (e.target !== qrDialog) return;
+    const bounds = qrDialog.getBoundingClientRect();
+    if (e.clientX < bounds.left || e.clientX > bounds.right ||
+        e.clientY < bounds.top || e.clientY > bounds.bottom) qrDialog.close();
+  });
 
   /* ── 7. 技术方向卡片 3D 倾斜（仅桌面精确指针） ─────────────── */
   if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
