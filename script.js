@@ -97,11 +97,11 @@
   $$(".hero-stats").forEach(el => countIO.observe(el));
 
   /* ── 5. 团队风采：单卡左右切换轮播 ────────────────────────────
-     · 9 张图片循环，一个展示位
+     · 12 张图片循环，一个展示位
      · 自动模式：每 5 秒向左切一张（旧图左滑出、新图右滑入）
      · 点击左/右箭头或卡片：立即切换，暂停自动 15 秒
   ──────────────────────────────────────────────────────────────── */
-  const PHOTOS = Array.from({ length: 9 }, (_, i) =>
+  const PHOTOS = Array.from({ length: 12 }, (_, i) =>
     `images/photos/photo-${String(i + 1).padStart(2, "0")}.webp`);
 
   const AUTO_INTERVAL = 5000;     /* 自动轮播间隔 */
